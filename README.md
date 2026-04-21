@@ -24,6 +24,10 @@ is violated.
 ---
 
 ## Repository Structure
+
+Correlation_Extension.ipynb:  Main experiment notebook  
+extension_outputs: saved checkpoints and figures from experiments
+
 ---
 
 ## Experiments
