@@ -1,13 +1,30 @@
 # Representation superposition is an underlying mechanism of neural scaling laws
 
-This is the official github repo for the paper [Superposition Yields Robust Neural Scaling](https://arxiv.org/abs/2505.10465), Yizhou Liu, Ziming Liu, and Jeff Gore, NeurIPS 2025 (Oral, Best Paper Runner-up).
+## Extension: Feature Correlation Experiments
 
-<p align="center" width="100%">
-<img src="./figures/best_paper.jpeg" alt="Alt Text" style="width:100%; min-width: 200px; display: block; margin: auto;">
-</p>
+Added by Shreeti Shrestha as part of a literary review extension.
+
+### New Files
+- `exp/exp_corr.py` — initial correlation experiment
+- `exp/exp_corr_v2.py` — extended with --seed and --alpha_data args
+
+### Usage
+```bash
+python exp/exp_corr_v2.py \
+    --n 1000 \
+    --n_steps 20000 \
+    --batch_size 2048 \
+    --weight_decay -1.0 \
+    --rho 0.4 \
+    --seed 42 \
+    --alpha_data 1.2
+```
+
+
+This is a fork of the github repo for the paper [Superposition Yields Robust Neural Scaling](https://arxiv.org/abs/2505.10465), Yizhou Liu, Ziming Liu, and Jeff Gore, NeurIPS 2025 (Oral, Best Paper Runner-up).
 
 ## Overview of results
-Superposition means that models represent more features than dimensions they have, which is true for LLMs since there are too many things to represent in language. We find that superposition leads to a power-law loss with width without assuming power laws elsewhere, leading to the observed neural scaling law. And the reason for the power law is geometric constraint of representations.
+Superposition means that models represent more features than dimensions they have, which is true for LLMs since there are too many things to represent in language. We find that superposition leads to a power-law loss with width without assuming power laws elsewhere, leading to the observed neural scaling law. And the reason for the power law is geometric constraint of representations. 
 
 The code of the following figure is ['./exp/exp-17.py'](./exp/exp-17.py)
 
