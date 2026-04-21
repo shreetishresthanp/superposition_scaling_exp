@@ -1,117 +1,143 @@
-# Representation superposition is an underlying mechanism of neural scaling laws
+# Superposition Scaling: Feature Correlation Extension
 
-## Extension: Feature Correlation Experiments
+Extension of [Liu et al. (2025)](https://github.com/liuyz0/SuperpositionScaling) 
+"Superposition Yields Robust Neural Scaling" (NeurIPS 2025).
 
-Added by Shreeti Shrestha as part of a literary review extension.
+This repository stress-tests the paper's central geometric assumption — 
+that features activate independently — by introducing block-correlated 
+feature activations into the toy model and measuring the effect on 
+loss scaling and ETF geometry.
 
-### New Files
-- `exp/exp_corr.py` — initial correlation experiment
-- `exp/exp_corr_v2.py` — extended with --seed and --alpha_data args
+---
 
-### Usage
-```bash
-python exp/exp_corr_v2.py \
-    --n 1000 \
-    --n_steps 20000 \
-    --batch_size 2048 \
-    --weight_decay -1.0 \
-    --rho 0.4 \
-    --seed 42 \
-    --alpha_data 1.2
-```
+## Background
+
+Liu et al. show that strong superposition forces representation vectors 
+toward an ETF-like geometry whose 1/m interference structure produces 
+robust 1/m loss scaling, independent of the feature frequency 
+distribution. However, their toy model assumes features activate 
+independently. In natural language, semantically related concepts 
+co-occur far more than chance would predict. This extension tests 
+whether the ETF geometry and 1/m scaling survive when this assumption 
+is violated.
+
+---
+
+## Repository Structure
+---
+
+## Experiments
+
+### Experiment 0 — Exploratory Baseline
+Single seed, all 5 rho values {0, 0.2, 0.4, 0.6, 0.8}, strong 
+superposition. Reproduces Liu et al.'s result and motivates 
+multi-seed analysis.
+
+### Experiment A — Multi-Seed Correlation Sweep
+3 seeds × 3 rho values {0.0, 0.4, 0.8}, strong superposition. 
+Statistically reliable estimates with error bars.
+
+### Experiment B — Alpha Sweep
+3 rho values × 4 data exponents {0.5, 1.0, 1.5, 2.0}, single seed, 
+strong superposition. Tests whether correlation effect is 
+distribution-specific.
+
+### Experiment C — Weak Superposition Comparison
+3 rho values, single seed, weak superposition (weight_decay=0.1). 
+Tests whether the two regimes are disrupted differently.
+
+---
+
+## Key Findings
 
 
-This is a fork of the github repo for the paper [Superposition Yields Robust Neural Scaling](https://arxiv.org/abs/2505.10465), Yizhou Liu, Ziming Liu, and Jeff Gore, NeurIPS 2025 (Oral, Best Paper Runner-up).
+**Finding 1 — Baseline reproduction**  
+At rho=0, alpha_m = 1.106 ± 0.023, reproducing Liu et al.'s result.
 
-## Overview of results
-Superposition means that models represent more features than dimensions they have, which is true for LLMs since there are too many things to represent in language. We find that superposition leads to a power-law loss with width without assuming power laws elsewhere, leading to the observed neural scaling law. And the reason for the power law is geometric constraint of representations. 
+**Finding 2 — Scaling exponent degrades under correlation**  
+At rho=0.4, alpha_m drops to 0.755 ± 0.052 across 3 seeds — a 
+statistically meaningful deviation with tight error bars. At rho=0.8, 
+alpha_m partially recovers to 0.909 ± 0.166 with high variance, 
+suggesting unstable optimization at extreme correlation.
 
-The code of the following figure is ['./exp/exp-17.py'](./exp/exp-17.py)
+**Finding 3 — ETF geometry collapses**  
+Row norm distributions collapse from heterogeneous spread at rho=0 
+to a sharp spike at exactly 1.0 under correlation, consistent across 
+all seeds and data exponents. Mean squared overlaps increase 
+monotonically above the ETF prediction of 1/m, from 1.20x at rho=0 
+to 1.43x at rho=0.8.
 
-<p align="center" width="100%">
-<img src="./figures/Fig-1-2.png" alt="Alt Text" style="width:100%; min-width: 200px; display: block; margin: auto;">
-</p>
+**Finding 4 — Effect is general across data exponents**  
+alpha_m remains near or above 1 for all alpha values when rho=0, 
+but drops to 0.56-0.79 at rho >= 0.4 across all distributions tested 
+(alpha in {0.5, 1.0, 1.5, 2.0}).
 
-## The toy model
+**Finding 5 — Weak and strong superposition fail differently**  
+Strong superposition forces uniform unit-norm representations under 
+correlation. Weak superposition causes norm collapse toward zero — 
+the model abandons feature representation almost entirely. These 
+contrasting failure modes suggest correlation affects the two regimes 
+through fundamentally different mechanisms.
 
-We use Anthropic's toy model of superposition, adding weight decay or growth to control the degree of superposition.
+---
 
-<p align="center" width="100%">
-<img src="./figures/Fig-2-2.png" alt="Alt Text" style="width:100%; min-width: 200px; display: block; margin: auto;">
-</p>
+## Key Result
 
-## Weight decay
+![Master Figure](extension_outputs/master_figure_strong_20k.png)
 
-Weight decay (or growth when the value is negative) can control superposition reflected by the fraction of represented features.
+*Feature correlation disrupts ETF geometry and degrades 1/m loss 
+scaling under strong superposition.  
+Top row (left to right): smoothed 
+loss scaling curves, fitted scaling exponent alpha_m vs correlation 
+strength rho, mean squared overlap vs rho (ETF prediction = 1/m).   
+Bottom row: row norm distributions at rho={0.0, 0.4, 0.8} showing 
+collapse from heterogeneous spread to sharp spike at 1.0.*
 
-The code of the following figure is ['./exp/exp-10.py'](./exp/exp-10.py) and ['./exp/exp-10-3.py'](./exp/exp-10-3.py)
+## Misc. Figures
 
-<p align="center" width="100%">
-<img src="./figures/Fig-3-3.png" alt="Alt Text" style="width:100%; min-width: 200px; display: block; margin: auto;">
-</p>
+### Experiment 0: Training Curves
+![Training curves](extension_outputs/training_curves.png)
+*Training loss over 20k steps. At rho=0, clean convergence. 
+At rho >= 0.2, noisy and poorly separated curves.*
 
-## Rich phenomena
+### Experiment 0: ETF Geometry
+![ETF geometry](extension_outputs/etf_geometry.png)
+*Mean squared overlap increases monotonically above 1/m as rho 
+increases, indicating degrading ETF geometry.*
 
-We need to answer when the loss is a power law with model dimension, and what control the power law exponent (we call it model exponent here).
+### Experiment 0: Row Norm Distributions
+![Row norms](extension_outputs/row_norm_distributions.png)
+*At rho=0, heterogeneous norms consistent with importance-based 
+representation. At rho >= 0.2, sharp spike at 1.0.*
 
-We analyze the data from ['./exp/exp-17.py'](./exp/exp-17.py), ['./exp/exp-10.py'](./exp/exp-10.py) and ['./exp/exp-10-3.py'](./exp/exp-10-3.py) in the following figure.
+### Experiment A: Multi-Seed Results
+![Experiment A](extension_outputs/exp_A_analysis.png)
+*Left: loss scaling with std bands.  
+Middle: alpha_m with error bars 
+showing statistically meaningful degradation at rho=0.4.  
+Right: row norm collapse consistent across seeds.*
 
-<p align="center" width="100%">
-<img src="./figures/Fig-4-3.png" alt="Alt Text" style="width:100%; min-width: 200px; display: block; margin: auto;">
-</p>
+### Experiment B: Alpha Sweep Heatmap
+![Experiment B](extension_outputs/exp_B_analysis.png)
+*alpha_m heatmap across rho × data exponent. rho=0 row consistently 
+green; rho >= 0.4 rows consistently red across all distributions.*
 
-## Weak superposition regime
+### Experiment C: Regime Comparison
+![Experiment C](extension_outputs/exp_C_analysis.png)
+*Weak superposition norms collapse toward zero under 
+correlation, unlike strong superposition which collapses to 1.0.*
 
-In the weak superposition regime (weight decay is large), the loss is well described by the expected number of activated but unlearned features, which is a power law once the feature distribution is.
-
-The data are from ['./exp/exp-10.py'](./exp/exp-10.py) and ['./exp/exp-10-3.py'](./exp/exp-10-3.py).
-
-<p align="center" width="100%">
-<img src="./figures/Fig-4-4.png" alt="Alt Text" style="width:100%; min-width: 200px; display: block; margin: auto;">
-</p>
-
-## Strong superposition
-
-Scaling behavior in the strong superposition regime is robust due to generic geometric fact that when many more vectors are squeezed into a lower dimensional space, their overlaps scale inversely proportional to square root of dimension.
-
-The data are from ['./exp/exp-10.py'](./exp/exp-10.py) and ['./exp/exp-10-3.py'](./exp/exp-10-3.py).
-
-<p align="center" width="100%">
-<img src="./figures/Fig-5-2.png" alt="Alt Text" style="width:100%; min-width: 200px; display: block; margin: auto;">
-</p>
-
-## Activation density
-
-The scaling exponents are robust to the number of expected activated features in one data point.
-
-The data are from ['./exp/exp-15.py'](./exp/exp-15.py).
-
-<p align="center" width="100%">
-<img src="./figures/Fig-7-2.png" alt="Alt Text" style="width:100%; min-width: 200px; display: block; margin: auto;">
-</p>
-
-## LLMs
-
-LLMs agree with the toy model results in the strong superposition regime from underlying overlaps between representations to loss scaling with model dimension.
-
-Analysis of overlaps is in ['./LLMs/overlap-0.py'](./LLMs/overlap-0.py). We also analyzed norm distribution in ['./LLMs/norm-0.py'](./LLMs/norm-0.py) and token frequencies in ['./LLMs/token-freq-0.py'](./LLMs/token-freq-0.py) (see Appendix in the paper). Loss evaluation can be found in ['./LLMs/cali-1.py'](./LLMs/cali-1.py).
-
-<p align="center" width="100%">
-<img src="./figures/Fig-8-2.png" alt="Alt Text" style="width:100%; min-width: 200px; display: block; margin: auto;">
-</p>
+---
 
 ## Citation
 
-```
-@article{liu2025superposition,
-  title={Superposition yields robust neural scaling},
+**Original paper:**
+```bibtex
+@inproceedings{liu2025superposition,
+  title={Superposition Yields Robust Neural Scaling},
   author={Liu, Yizhou and Liu, Ziming and Gore, Jeff},
-  journal={arXiv preprint arXiv:2505.10465},
+  booktitle={NeurIPS},
   year={2025}
 }
 ```
-
-## Interested in Other Neural Scaling Laws?
-
-- Depth Scaling Due to Limited Transformation: Inverse Depth Scaling From Most Layers Being Similar ([paper link](https://arxiv.org/abs/2602.05970), [code link](https://github.com/liuyz0/DepthScaling))
-- Time Scaling Due to Limited Training: Universal One-third Time Scaling in Learning Peaked Distributions ([paper link](https://arxiv.org/abs/2602.03685), [code link](https://github.com/liuyz0/TimeScaling))
+---
